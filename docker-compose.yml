@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: app
+    restart: on-failure
+    environment:
+      - PGHOST=${PGHOST}
+      - PGPORT=${PGPORT}
+      - PGUSER=${PGUSER}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGDATABASE=${PGDATABASE}
+    ports:
+      - "${PORT}:${PORT}"
+    networks:
+      - back-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - back-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER} -d ${PGDATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  back-net:
+
+volumes:
+  db-data:
